@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 from google import genai
 from google.genai import types
@@ -136,9 +137,11 @@ Always be concise, friendly, and encouraging.
 
 # ── Gemini setup ──────────────────────────────────────────────────────────────
 def get_client():
-    api_key = st.secrets.get("GEMINI_API_KEY", "")
+    # Check Streamlit secrets first, then OS environment variables
+    api_key = st.secrets.get("GEMINI_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
+    
     if not api_key or api_key == "YOUR_API_KEY_HERE":
-        st.error("⚠️ The GEMINI_API_KEY is missing! Please configure it in `.streamlit/secrets.toml`.")
+        st.error("⚠️ The GEMINI_API_KEY is missing! Please configure it in Streamlit Secrets.")
         st.stop()
     return genai.Client(api_key=api_key)
 
