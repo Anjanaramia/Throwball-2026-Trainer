@@ -1,5 +1,6 @@
 import streamlit as st
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -134,16 +135,12 @@ Always be concise, friendly, and encouraging.
 """
 
 # ── Gemini setup ──────────────────────────────────────────────────────────────
-def get_model():
+def get_client():
     api_key = st.secrets.get("GEMINI_API_KEY", "")
     if not api_key or api_key == "YOUR_API_KEY_HERE":
         st.error("⚠️ The GEMINI_API_KEY is missing! Please configure it in `.streamlit/secrets.toml`.")
         st.stop()
-    genai.configure(api_key=api_key)
-    return genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
-        system_instruction=SYSTEM_PROMPT,
-    )
+    return genai.Client(api_key=api_key)
 
 # ── Session state ─────────────────────────────────────────────────────────────
 if "messages" not in st.session_state:
@@ -218,8 +215,13 @@ if not st.session_state.mode:
 # ── Init chat session ─────────────────────────────────────────────────────────
 if st.session_state.chat is None:
     try:
-        model = get_model()
-        st.session_state.chat = model.start_chat(history=[])
+        client = get_client()
+        st.session_state.chat = client.chats.create(
+            model="gemini-2.5-flash",
+            config=types.GenerateContentConfig(
+                system_instruction=SYSTEM_PROMPT,
+            )
+        )
         # Send mode-init message
         init_msg = f"The player selected mode {st.session_state.mode}. {GREET_MAP[st.session_state.mode]} Begin immediately."
         response = st.session_state.chat.send_message(init_msg)
